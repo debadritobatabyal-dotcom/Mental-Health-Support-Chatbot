@@ -4,7 +4,7 @@ from textblob import TextBlob
 import pandas as pd
 
 # Change it to your open ai api key
-openai.api_key = 'your_openai_api_key'
+openai.api_key = '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'
 
 
 # Function to generate a response from GPT-3
