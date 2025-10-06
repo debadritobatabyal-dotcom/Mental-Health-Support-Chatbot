@@ -1,26 +1,19 @@
 import streamlit as st
-import openai
+import google.generativeai as genai
 from textblob import TextBlob
 import pandas as pd
 
-# Change it to your open ai api key
-openai.api_key = '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'
+# Configure Gemini API
+genai.configure(api_key="AIzaSyDYItMqc6A1bNqYTBtdcHTg4k3tkOM_UUo")
 
-
-# Function to generate a response from GPT-3
+# Function to generate a response using Gemini
 def generate_response(prompt):
     try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message['content'].strip()
-    except openai.RateLimitError:
-        return "It seems we have reached the API quota limit. Please try again later or check your OpenAI account."
-
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(prompt)
+        return response.text.strip() if response and response.text else "Sorry, I couldn’t generate a response right now."
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
 
 # Analyze sentiment
 def analyze_sentiment(text):
@@ -37,7 +30,6 @@ def analyze_sentiment(text):
     else:
         return "Very Negative", polarity
 
-
 # Provide coping strategies
 def provide_coping_strategy(sentiment):
     strategies = {
@@ -49,7 +41,6 @@ def provide_coping_strategy(sentiment):
     }
     return strategies.get(sentiment, "Keep going, you're doing great!")
 
-
 # Disclaimer regarding data privacy
 def display_disclaimer():
     st.sidebar.markdown(
@@ -57,14 +48,13 @@ def display_disclaimer():
         unsafe_allow_html=True
     )
     st.sidebar.markdown(
-        "<span style='color: #FF5733;'>This application stores your session data, including your messages and "
-        "sentiment analysis results, in temporary storage during your session. "
-        "This data is not stored permanently and is used solely to improve your interaction with the chatbot. "
-        "Please avoid sharing personal or sensitive information during your conversation.</span>",
+        "<span style='color: #FF5733;'>This application temporarily stores your messages and sentiment results during your session. "
+        "Nothing is permanently saved or shared. Please avoid entering personal or sensitive details.</span>",
         unsafe_allow_html=True
     )
 
-st.title("Mental Health Support Chatbot")
+# Streamlit UI
+st.title("🧠 Mental Health Support Chatbot (Gemini API)")
 
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
@@ -98,12 +88,12 @@ if st.session_state['mood_tracker']:
     st.line_chart(mood_data['Polarity'])
 
 # Display coping strategies
-if user_message:
-    st.write(f"Suggested Coping Strategy: {coping_strategy}")
+if submit_button and user_message:
+    st.write(f"**Suggested Coping Strategy:** {coping_strategy}")
 
-# Display resources
+# Sidebar resources
 st.sidebar.title("Resources")
-st.sidebar.write("If you need immediate help, please contact one of the following resources:")
+st.sidebar.write("If you need immediate help, please contact:")
 st.sidebar.write("1. National Suicide Prevention Lifeline: 1-800-273-8255")
 st.sidebar.write("2. Crisis Text Line: Text 'HELLO' to 741741")
 st.sidebar.write("[More Resources](https://www.mentalhealth.gov/get-help/immediate-help)")
@@ -113,6 +103,5 @@ if st.sidebar.button("Show Session Summary"):
     st.sidebar.write("### Session Summary")
     for i, (message, sentiment, polarity) in enumerate(st.session_state['mood_tracker']):
         st.sidebar.write(f"{i + 1}. {message} - Sentiment: {sentiment} (Polarity: {polarity})")
-
 
 display_disclaimer()
